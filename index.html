@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>موقع قائمة المهام المتقدم</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2980b9;
+            --background-color: #ecf0f1;
+            --text-color: #34495e;
+            --sidebar-color: #2c3e50;
+            --completed-color: #27ae60;
+            --delete-color: #e74c3c;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: var(--sidebar-color);
+            color: white;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        .sidebar h2 {
+            margin-top: 0;
+            text-align: center;
+            font-size: 1.5em;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary-color);
+        }
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .sidebar li {
+            margin-bottom: 10px;
+        }
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .sidebar a:hover {
+            background-color: var(--primary-color);
+            transform: translateX(5px);
+        }
+        .sidebar a i {
+            margin-left: 10px;
+        }
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--card-shadow);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            background-color: white;
+            color: var(--primary-color);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .btn:hover {
+            background-color: #f0f0f0;
+            transform: scale(1.05);
+        }
+        .task-input {
+            display: flex;
+            margin-bottom: 20px;
+            box-shadow: var(--card-shadow);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .task-input input, .task-input select {
+            flex-grow: 1;
+            padding: 12px;
+            font-size: 16px;
+            border: none;
+            outline: none;
+        }
+        .task-input button {
+            padding: 12px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .task-input button:hover {
+            background-color: var(--secondary-color);
+            transform: scale(1.05);
+        }
+        .filters {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .filter-btn {
+            padding: 8px 15px;
+            background-color: #ddd;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            margin: 0 5px;
+        }
+        .filter-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .filter-btn:hover {
+            transform: scale(1.05);
+        }
+        .task-list {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .task-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.3s, transform 0.2s;
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .task-item:last-child {
+            border-bottom: none;
+        }
+        .task-item:hover {
+            background-color: #f9f9f9;
+            transform: translateY(-2px);
+        }
+        .task-item .task-text {
+            flex-grow: 1;
+            margin: 0 10px;
+            transition: color 0.3s;
+        }
+        .task-item .task-actions {
+            display: flex;
+        }
+        .task-item .task-actions button {
+            margin-right: 5px;
+            padding: 5px 10px;
+            background-color: transparent;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s, transform 0.2s;
+        }
+        .task-item .task-actions button:hover {
+            transform: scale(1.1);
+        }
+        .task-item .task-actions .edit-btn:hover {
+            color: var(--primary-color);
+        }
+        .task-item .task-actions .delete-btn:hover {
+            color: var(--delete-color);
+        }
+        .task-item.completed .task-text {
+            text-decoration: line-through;
+            color: #888;
+        }
+        .checkbox-custom {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background-color: white;
+            border: 2px solid #ddd;
+            border-radius: 3px;
+            margin-left: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .checkbox-custom::after {
+            content: '\2714';
+            display: block;
+            color: white;
+            text-align: center;
+            font-size: 14px;
+            line-height: 20px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .task-item.completed .checkbox-custom {
+            background-color: var(--completed-color);
+            border-color: var(--completed-color);
+        }
+        .task-item.completed .checkbox-custom::after {
+            opacity: 1;
+        }
+        .due-date {
+            font-size: 0.8em;
+            color: #777;
+            margin-right: 10px;
+        }
+        .priority {
+            font-size: 0.8em;
+            padding: 2px 5px;
+            border-radius: 3px;
+            margin-right: 10px;
+        }
+        .priority-high { background-color: #ff7675; color: white; }
+        .priority-medium { background-color: #fdcb6e; color: #333; }
+        .priority-low { background-color: #81ecec; color: #333; }
+        .stats {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            margin-top: 20px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+        }
+        .close {
+            color: #aaa;
+            float: left;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+            .filters {
+                flex-wrap: wrap;
+            }
+            .filter-btn {
+                margin-bottom: 5px;
+            }
+        }
+        .dark-mode {
+            --background-color: #2c3e50;
+            --text-color: #ecf0f1;
+            --sidebar-color: #34495e;
+            --primary-color: #1abc9c;
+            --secondary-color: #16a085;
+            --completed-color: #27ae60;
+            --delete-color: #e74c3c;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>القائمة</h2>
+            <ul>
+                <li><a href="#" id="all-tasks"><i class="fas fa-tasks"></i> كل المهام</a></li>
+                <li><a href="#" id="today-tasks"><i class="fas fa-calendar-day"></i> المهام اليوم</a></li>
+                <li><a href="#" id="completed-tasks"><i class="fas fa-check-circle"></i> المهام المكتملة</a></li>
+                <li><a href="#" id="stats-link"><i class="fas fa-chart-bar"></i> الإحصائيات</a></li>
+            </ul>
+        </div>
+        <div class="main-content">
+            <div class="header">
+                <h1><i class="fas fa-clipboard-list"></i> قائمة المهام</h1>
+                <div class="header-actions">
+                    <button class="btn" id="import-export-btn"><i class="fas fa-file-import"></i> استيراد/تصدير</button>
+                    <button class="btn" id="dark-mode-toggle"><i class="fas fa-moon"></i></button>
+                </div>
+            </div>
+            <div class="task-input">
+                <input type="text" id="new-task" placeholder="أضف مهمة جديدة...">
+                <input type="date" id="due-date">
+                <select id="priority">
+                    <option value="low">منخفضة</option>
+                    <option value="medium">متوسطة</option>
+                    <option value="high">عالية</option>
+                </select>
+                <button id="add-task"><i class="fas fa-plus"></i> إضافة</button>
+            </div>
+            <div class="filters">
+                <button class="filter-btn active" data-filter="all">الكل</button>
+                <button class="filter-btn" data-filter="active">النشطة</button>
+                <button class="filter-btn" data-filter="completed">المكتملة</button>
+            </div>
+            <div class="task-list" id="task-list">
+                <!-- المهام ستضاف هنا ديناميكيًا -->
+            </div>
+            <div class="stats" id="stats-section" style="display:none;">
+                <h2>إحصائيات المهام</h2>
+                <canvas id="taskChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div id="importExportModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>استيراد / تصدير المهام</h2>
+            <button id="export-btn" class="btn">تصدير المهام</button>
+            <input type="file" id="import-file" accept=".json" style="display: none;">
+            <button id="import-btn" class="btn">استيراد المهام</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const taskInput = document.getElementById('new-task');
+            const dueDateInput = document.getElementById('due-date');
+            const prioritySelect = document.getElementById('priority');
+            const addTaskBtn = document.getElementById('add-task');
+            const taskList = document.getElementById('task-list');
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            const darkModeToggle = document.getElementById('dark-mode-toggle');
+            const importExportBtn = document.getElementById('import-export-btn');
+            const importExportModal = document.getElementById('importExportModal');
+            const closeModalBtn = document.querySelector('.close');
+            const exportBtn = document.getElementById('export-btn');
+            const importBtn = document.getElementById('import-btn');
+            const importFileInput = document.getElementById('import-file');
+            const statsLink = document.getElementById('stats-link');
+            const statsSection = document.getElementById('stats-section');
+            const taskChart = document.getElementById('taskChart').getContext('2d');
+
+            let tasks = [];
+
+            // Load tasks from localStorage
+            function loadTasks() {
+                const storedTasks = localStorage.getItem('tasks');
+                if (storedTasks) {
+                    tasks = JSON.parse(storedTasks);
+                }
+                renderTasks();
+            }
+
+            // Save tasks to localStorage
+            function saveTasks() {
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+            }
+
+            // Render tasks based on the selected filter
+            function renderTasks(filter = 'all') {
+                taskList.innerHTML = '';
+                const filteredTasks = tasks.filter(task => {
+                    if (filter === 'active') return !task.completed;
+                    if (filter === 'completed') return task.completed;
+                    return true;
+                });
+
+                filteredTasks.forEach(task => {
+                    const taskItem = document.createElement('div');
+                    taskItem.classList.add('task-item');
+                    if (task.completed) taskItem.classList.add('completed');
+
+                    taskItem.innerHTML = `
+                        <span class="checkbox-custom" onclick="toggleTask(${task.id})"></span>
+                        <span class="task-text">${task.text}</span>
+                        <span class="due-date">${task.dueDate}</span>
+                        <span class="priority priority-${task.priority}">${task.priority}</span>
+                        <div class="task-actions">
+                            <button class="edit-btn" onclick="editTask(${task.id})"><i class="fas fa-edit"></i></button>
+                            <button class="delete-btn" onclick="deleteTask(${task.id})"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    `;
+                    taskList.appendChild(taskItem);
+                });
+            }
+
+            // Add a new task
+            function addTask() {
+                const taskText = taskInput.value.trim();
+                const dueDate = dueDateInput.value;
+                const priority = prioritySelect.value;
+
+                if (taskText === '') return;
+
+                const newTask = {
+                    id: Date.now(),
+                    text: taskText,
+                    dueDate: dueDate,
+                    priority: priority,
+                    completed: false
+                };
+
+                tasks.push(newTask);
+                saveTasks();
+                renderTasks();
+
+                taskInput.value = '';
+                dueDateInput.value = '';
+            }
+
+            // Toggle task completion
+            window.toggleTask = function(taskId) {
+                const task = tasks.find(t => t.id === taskId);
+                if (task) {
+                    task.completed = !task.completed;
+                    saveTasks();
+                    renderTasks();
+                }
+            }
+
+            // Edit a task
+            window.editTask = function(taskId) {
+                const task = tasks.find(t => t.id === taskId);
+                if (task) {
+                    taskInput.value = task.text;
+                    dueDateInput.value = task.dueDate;
+                    prioritySelect.value = task.priority;
+                    deleteTask(taskId);
+                }
+            }
+
+            // Delete a task
+            window.deleteTask = function(taskId) {
+                tasks = tasks.filter(t => t.id !== taskId);
+                saveTasks();
+                renderTasks();
+            }
+
+            // Toggle dark mode
+            function toggleDarkMode() {
+                document.body.classList.toggle('dark-mode');
+                updateTaskTextColor();
+            }
+
+            // Update task text color in dark mode
+            function updateTaskTextColor() {
+                const taskItems = document.querySelectorAll('.task-item .task-text');
+                taskItems.forEach(item => {
+                    if (document.body.classList.contains('dark-mode')) {
+                        item.style.color = 'var(--text-color)';
+                    } else {
+                        item.style.color = '';
+                    }
+                });
+            }
+
+            // Export tasks to JSON file
+            function exportTasks() {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tasks));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", "tasks.json");
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+            }
+
+            // Import tasks from JSON file
+            function importTasks(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const contents = e.target.result;
+                    tasks = JSON.parse(contents);
+                    saveTasks();
+                    renderTasks();
+                };
+                reader.readAsText(file);
+            }
+
+            // Toggle import/export modal
+            function toggleImportExportModal() {
+                importExportModal.style.display = importExportModal.style.display === 'block' ? 'none' : 'block';
+            }
+
+            // Close import/export modal when clicking close button
+            closeModalBtn.onclick = function() {
+                importExportModal.style.display = 'none';
+            }
+
+            // Close import/export modal when clicking outside the modal
+            window.onclick = function(event) {
+                if (event.target === importExportModal) {
+                    importExportModal.style.display = 'none';
+                }
+            }
+
+            // Show stats section
+            function showStats() {
+                statsSection.style.display = 'block';
+                renderStats();
+            }
+
+            // Render stats using Chart.js
+            function renderStats() {
+                const completedTasks = tasks.filter(t => t.completed).length;
+                const activeTasks = tasks.length - completedTasks;
+
+                new Chart(taskChart, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['المهام المكتملة', 'المهام النشطة'],
+                        datasets: [{
+                            data: [completedTasks, activeTasks],
+                            backgroundColor: ['#27ae60', '#3498db']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Load tasks on page load
+            loadTasks();
+
+            // Add event listeners to buttons
+            addTaskBtn.onclick = addTask;
+            filterBtns.forEach(btn => {
+                btn.onclick = function() {
+                    document.querySelector('.filter-btn.active').classList.remove('active');
+                    btn.classList.add('active');
+                    renderTasks(btn.getAttribute('data-filter'));
+                }
+            });
+            darkModeToggle.onclick = toggleDarkMode;
+            importExportBtn.onclick = toggleImportExportModal;
+            exportBtn.onclick = exportTasks;
+            importBtn.onclick = function() {
+                importFileInput.click();
+            }
+            importFileInput.onchange = importTasks;
+            statsLink.onclick = showStats;
+        });
+    </script>
+</body>
+</html>
